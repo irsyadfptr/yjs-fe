@@ -1,23 +1,21 @@
 "use client";
 import { useEffect, useState } from 'react';
 
-export default function CollabChat({ doc }) {
+export default function CollabChat({ doc, userName }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
 
   useEffect(() => {
     if (!doc) return;
-
-    // Get or create a Yjs Array for chat messages
+    
     const yMessages = doc.getArray('chat');
 
     const updateMessages = () => {
       setMessages(yMessages.toArray());
     };
 
-    // Listen for remote changes
     yMessages.observe(updateMessages);
-    updateMessages(); // Initial load
+    updateMessages(); 
 
     return () => yMessages.unobserve(updateMessages);
   }, [doc]);
@@ -25,10 +23,10 @@ export default function CollabChat({ doc }) {
   const sendMessage = (e) => {
     e.preventDefault();
     if (!input.trim() || !doc) return;
-
+    
     const yMessages = doc.getArray('chat');
-    // Push new message to the shared array
-    yMessages.push([{ id: Date.now(), text: input, user: 'User-' + Math.floor(Math.random()*1000) }]);
+    
+    yMessages.push([{ id: Date.now(), text: input, user: userName }]);
     setInput('');
   };
 
