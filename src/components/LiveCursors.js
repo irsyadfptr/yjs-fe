@@ -1,32 +1,32 @@
 "use client";
-import { useEffect } from 'react';
-import { usePresence } from '../hooks/usePresence';
+import { useEffect } from "react";
+import { usePathname } from "next/navigation"; // <-- Import usePathname
+import { usePresence } from "../hooks/usePresence";
 
 export default function LiveCursors({ provider }) {
   const users = usePresence(provider);
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!provider) return;
 
     const handlePointerMove = (e) => {
-      // Broadcast your mouse coordinates to the room
-      provider.awareness.setLocalStateField('cursor', {
+      provider.awareness.setLocalStateField("cursor", {
         x: e.clientX,
         y: e.clientY,
       });
     };
 
     const handlePointerLeave = () => {
-      // Remove your cursor when you leave the browser window
-      provider.awareness.setLocalStateField('cursor', null);
+      provider.awareness.setLocalStateField("cursor", null);
     };
 
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerleave', handlePointerLeave);
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerleave", handlePointerLeave);
 
     return () => {
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerleave', handlePointerLeave);
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerleave", handlePointerLeave);
     };
   }, [provider]);
 
@@ -36,8 +36,17 @@ export default function LiveCursors({ provider }) {
   return (
     <>
       {Array.from(users.entries()).map(([id, state]) => {
-        // Don't render your own cursor, or users without cursor data
-        if (id === clientID || !state.cursor || !state.user) return null;
+        // FILTER APPLIED HERE:
+        // Do not render if it's our own cursor, if they have no cursor state,
+        // or if they are NOT on the same page as us.
+        if (
+          id === clientID ||
+          !state.cursor ||
+          !state.user ||
+          state.user.location !== pathname
+        ) {
+          return null;
+        }
 
         return (
           <div
@@ -47,21 +56,25 @@ export default function LiveCursors({ provider }) {
               transform: `translate(${state.cursor.x}px, ${state.cursor.y}px)`,
             }}
           >
-            {/* The Cursor Arrow SVG */}
-            <svg 
-              width="24" 
-              height="36" 
-              viewBox="0 0 24 36" 
-              fill="none" 
+            <svg
+              width="24"
+              height="36"
+              viewBox="0 0 24 36"
+              fill="none"
               className="drop-shadow-md"
             >
-              <path d="M5.65376 21.1573L2.30604 3.51351L20.8931 14.8696L11.5317 17.519L9.1235 25.1017L5.65376 21.1573Z" fill={state.user.color} />
+              <path
+                d="M5.65376 21.1573L2.30604 3.51351L20.8931 14.8696L11.5317 17.519L9.1235 25.1017L5.65376 21.1573Z"
+                fill={state.user.color}
+              />
             </svg>
-            
-            {/* The Name Tag */}
+
             <div
-              className="ml-4 mt-1 px-2 py-1 text-xs text-white rounded-md whitespace-nowrap shadow-sm"
-              style={{ backgroundColor: state.user.color }}
+              className="ml-4 mt-1 px-2 py-1 text-xs rounded-md whitespace-nowrap shadow-sm"
+              style={{
+                backgroundColor: state.user.color,
+                color: state.user.textColor,
+              }}
             >
               {state.user.name}
             </div>

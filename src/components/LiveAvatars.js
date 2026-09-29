@@ -1,14 +1,16 @@
 "use client";
-import { usePresence } from '../hooks/usePresence';
+import { usePresence } from "../hooks/usePresence";
 
 export default function LiveAvatars({ provider }) {
   const users = usePresence(provider);
-  
+
   if (!provider) return null;
   const clientID = provider.awareness.clientID;
-  
+
   // Filter out connected clients that haven't initialized their user object yet
-  const activeUsers = Array.from(users.entries()).filter(([id, state]) => state.user);
+  const activeUsers = Array.from(users.entries()).filter(
+    ([id, state]) => state.user,
+  );
 
   return (
     <div className="flex -space-x-2">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 export function usePresence(provider) {
   const [users, setUsers] = useState(new Map());
@@ -14,11 +14,11 @@ export function usePresence(provider) {
     };
 
     // Listen to changes from other connected clients
-    awareness.on('change', updateUsers);
+    awareness.on("change", updateUsers);
     updateUsers(); // initial sync
 
     return () => {
-      awareness.off('change', updateUsers);
+      awareness.off("change", updateUsers);
     };
   }, [provider]);
 

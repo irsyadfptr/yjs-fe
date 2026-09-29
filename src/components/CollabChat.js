@@ -1,33 +1,48 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 export default function CollabChat({ doc, userName }) {
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
 
   useEffect(() => {
     if (!doc) return;
-    
-    const yMessages = doc.getArray('chat');
+
+    const yMessages = doc.getArray("chat");
 
     const updateMessages = () => {
-      setMessages(yMessages.toArray());
+      console.time("⏱️ [Y.Array] React Render");
+
+      const rawArray = yMessages.toArray();
+      console.log("🔍 [Y.Array State] Extracted List:", rawArray);
+
+      setMessages(rawArray);
+
+      console.timeEnd("⏱️ [Y.Array] React Render");
     };
 
-    yMessages.observe(updateMessages);
-    updateMessages(); 
+    // Listen for changes
+    const observer = (event) => {
+      console.log("⚡ [Y.Array Event] Delta received from CRDT engine!");
+      updateMessages();
+    };
 
-    return () => yMessages.unobserve(updateMessages);
+    yMessages.observe(observer);
+    updateMessages();
+
+    // Cleanup
+    return () => yMessages.unobserve(observer);
   }, [doc]);
 
   const sendMessage = (e) => {
     e.preventDefault();
     if (!input.trim() || !doc) return;
-    
-    const yMessages = doc.getArray('chat');
-    
+
+    console.log("📤 [Yjs Action] Pushing new message to Y.Array...");
+    const yMessages = doc.getArray("chat");
+
     yMessages.push([{ id: Date.now(), text: input, user: userName }]);
-    setInput('');
+    setInput("");
   };
 
   return (
@@ -41,13 +56,16 @@ export default function CollabChat({ doc, userName }) {
         ))}
       </div>
       <form onSubmit={sendMessage} className="flex gap-2">
-        <input 
+        <input
           className="border rounded-md px-3 py-2 flex-1"
-          value={input} 
-          onChange={(e) => setInput(e.target.value)} 
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
           placeholder="Type a message..."
         />
-        <button type="submit" className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800">
+        <button
+          type="submit"
+          className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800"
+        >
           Send
         </button>
       </form>
