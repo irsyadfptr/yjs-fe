@@ -1,6 +1,6 @@
 "use client";
 import { useEffect } from "react";
-import { usePathname } from "next/navigation"; // <-- Import usePathname
+import { usePathname } from "next/navigation";
 import { usePresence } from "../hooks/usePresence";
 
 export default function LiveCursors({ provider }) {

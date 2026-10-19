@@ -3,13 +3,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useYjsContext } from "./YjsProvider";
 import { usePresence } from "../hooks/usePresence";
+import LiveAvatars from "./LiveAvatars";
 
 export default function Navigation() {
   const pathname = usePathname();
-  const { provider, status } = useYjsContext();
+  const { provider, status, handleLogout, name } = useYjsContext();
   const users = usePresence(provider);
 
-  const activeUsers = Array.from(users.values()).filter((s) => s.user);
+  const activeUsers = Array.from(users.values())
+    .filter((s) => s.user)
+    .filter(
+      (state, index, self) =>
+        index === self.findIndex((t) => t.user.name === state.user.name),
+    );
 
   const routes = [
     { name: "Form", path: "/form" },
@@ -44,20 +50,8 @@ export default function Navigation() {
                 {route.name}
               </Link>
 
-              <div className="absolute translate-y-5 -space-x-1.5 mt-2 h-5">
-                {usersOnThisRoute.map((state, i) => (
-                  <div
-                    key={i}
-                    className="w-5 h-5 rounded-full border border-white flex items-center justify-center text-[10px] font-bold shadow-sm cursor-default"
-                    style={{
-                      backgroundColor: state.user.color,
-                      color: state.user.textColor,
-                    }}
-                    title={`${state.user.name} is here`}
-                  >
-                    {state.user.name.charAt(0)}
-                  </div>
-                ))}
+              <div className="absolute translate-y-5 mt-2 h-5 flex flex-row">
+                <LiveAvatars users={usersOnThisRoute} size="sm" />
               </div>
             </div>
           );
@@ -91,6 +85,23 @@ export default function Navigation() {
         <span className="text-sm font-medium text-gray-500">
           {activeUsers.length} Online
         </span>
+
+        {name && (
+          <div className="flex items-center gap-3 border-l pl-4 ml-2">
+            <span
+              className="text-sm font-medium text-gray-700 truncate max-w-[100px]"
+              title={name}
+            >
+              Hi, {name.split(" ")[0]}
+            </span>
+            <button
+              onClick={handleLogout}
+              className="text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-200 transition-colors font-medium border border-gray-200"
+            >
+              Leave
+            </button>
+          </div>
+        )}
       </div>
     </nav>
   );

@@ -15,8 +15,8 @@ export default function CollabForm({ doc, provider, users, fields }) {
       console.time("⏱️ [Y.Map Reactivity] Update Form UI");
 
       const rawMap = yForm.toJSON();
-      console.log("🔍 [Y.Map State] RAW Yform", yForm);
-      console.log("🔍 [Y.Map State] Converted Yjs Object:", rawMap);
+      // console.log("🔍 [Y.Map State] RAW Yform", yForm);
+      // console.log("🔍 [Y.Map State] Converted Yjs Object:", rawMap);
 
       const nextState = {};
       fields.forEach((field) => {
@@ -28,7 +28,7 @@ export default function CollabForm({ doc, provider, users, fields }) {
     };
 
     const observer = (event) => {
-      console.log("⚡ [Y.Map Event] Remote keys changed:", event.changes.keys);
+      // console.log("⚡ [Y.Map Event] Remote keys changed:", event.changes.keys);
       updateForm();
     };
 
@@ -49,12 +49,18 @@ export default function CollabForm({ doc, provider, users, fields }) {
   }, [doc, fields]);
 
   const handleChange = (field, value) => {
+    // console.log(`✏️ [Y.Map Action] Setting "${field}" → "${value}"`);
     setFormData((prev) => ({ ...prev, [field]: value }));
     doc.getMap("form").set(field, value);
   };
 
   const setFocus = (fieldName) => {
     if (!provider) return;
+    if (fieldName) {
+      // console.log(`👁️ [Awareness] Broadcasting focused field: "${fieldName}"`);
+    } else {
+      // console.log(`👁️ [Awareness] Cleared field focus`);
+    }
     provider.awareness.setLocalStateField("focusedField", fieldName);
   };
 

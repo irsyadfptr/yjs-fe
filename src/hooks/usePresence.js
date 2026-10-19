@@ -9,8 +9,9 @@ export function usePresence(provider) {
     const awareness = provider.awareness;
 
     const updateUsers = () => {
-      // Get all active clients and their current states
-      setUsers(new Map(awareness.getStates()));
+      const states = awareness.getStates();
+      // console.log(`👥 [Awareness Change] ${states.size} peer state(s) active`, Object.fromEntries(states));
+      setUsers(new Map(states));
     };
 
     // Listen to changes from other connected clients

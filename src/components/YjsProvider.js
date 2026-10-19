@@ -27,43 +27,63 @@ export function YjsProvider({ children }) {
     color: "",
     textColor: "",
   });
+
+  const [isInitializing, setIsInitializing] = useState(true);
+
   const [yjsState, setYjsState] = useState({
     doc: null,
     provider: null,
     status: "connecting",
     isOfflineDataLoaded: false,
   });
+
   const pathname = usePathname();
 
   const yjsRefs = useRef({ doc: null, wsProvider: null, idbProvider: null });
 
+  useEffect(() => {
+    const savedUser = localStorage.getItem("yjs-user-profile");
+    if (savedUser) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setUserContext(JSON.parse(savedUser));
+    }
+    setIsInitializing(false);
+  }, []);
+
   const handleJoin = (e) => {
     e.preventDefault();
     if (nameInput.trim()) {
-      setUserContext({
+      const newUserContext = {
         name: nameInput.trim(),
         color: colorInput,
         textColor: getContrastTextColor(colorInput),
-      });
+      };
+
+      setUserContext(newUserContext);
+      // NEW: Save to localStorage so it survives refresh
+      localStorage.setItem("yjs-user-profile", JSON.stringify(newUserContext));
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("yjs-user-profile");
+    setUserContext({ name: "", color: "", textColor: "" });
   };
 
   useEffect(() => {
     if (!userContext.name) return;
     if (yjsRefs.current.doc) return;
 
-    console.log("🚀 [Yjs Engine] Booting up collaborative environment...");
+    // console.log("🚀 [Yjs Engine] Booting up collaborative environment...");
     console.time("⏱️ [IndexedDB] Time to load local data");
 
     const ydoc = new Y.Doc();
+    console.log(ydoc);
     const roomName = "multi-page-workspace";
 
     // 1. Initialize WebSocket (Cloud)
-    const yprovider = new WebsocketProvider(
-      "ws://localhost:1234",
-      roomName,
-      ydoc,
-    );
+    const wsUrl = `ws://${window.location.hostname}:1234`;
+    const yprovider = new WebsocketProvider(wsUrl, roomName, ydoc);
 
     // 2. Initialize IndexedDB (Local Offline Storage)
     const indexeddbProvider = new IndexeddbPersistence(roomName, ydoc);
@@ -71,22 +91,22 @@ export function YjsProvider({ children }) {
     // LOG: Watch IndexedDB speed
     indexeddbProvider.on("synced", () => {
       console.timeEnd("⏱️ [IndexedDB] Time to load local data");
-      console.log(
-        "💾 [IndexedDB] Offline data successfully loaded into memory!",
-      );
+      // console.log(
+      //   "💾 [IndexedDB] Offline data successfully loaded into memory!",
+      // );
       setYjsState((prev) => ({ ...prev, isOfflineDataLoaded: true }));
     });
 
     // LOG: Watch Network status
     yprovider.on("status", (event) => {
       setYjsState((prev) => ({ ...prev, status: event.status }));
-      console.log(
-        `🌐 [WebSocket] Status changed to: ${event.status.toUpperCase()}`,
-      );
+      // console.log(
+      //   `🌐 [WebSocket] Status changed to: ${event.status.toUpperCase()}`,
+      // );
       if (event.status === "connected") {
-        console.log(
-          "☁️ [Network] Connected! Ready to sync local diffs to the cloud.",
-        );
+        // console.log(
+        //   "☁️ [Network] Connected! Ready to sync local diffs to the cloud.",
+        // );
       }
     });
 
@@ -116,13 +136,23 @@ export function YjsProvider({ children }) {
   // Track page location and custom colors in Awareness
   useEffect(() => {
     if (!yjsState.provider) return;
-    yjsState.provider.awareness.setLocalStateField("user", {
+    const payload = {
       name: userContext.name,
       color: userContext.color,
       textColor: userContext.textColor,
       location: pathname,
-    });
+    };
+    // console.log(`📡 [Awareness] Broadcasting user presence →`, payload);
+    yjsState.provider.awareness.setLocalStateField("user", payload);
   }, [pathname, yjsState.provider, userContext]);
+
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
 
   if (!userContext.name) {
     return (
@@ -187,7 +217,7 @@ export function YjsProvider({ children }) {
   }
 
   return (
-    <YjsContext.Provider value={{ ...yjsState, ...userContext }}>
+    <YjsContext.Provider value={{ ...yjsState, ...userContext, handleLogout }}>
       <LiveCursors provider={yjsState.provider} />
       {children}
     </YjsContext.Provider>
